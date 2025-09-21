@@ -69,7 +69,9 @@ static const oai_cc_str _newl_key = OAI_CC_STR("\n\n");
 #define OAI_CC_CHAT_IS_EMPTY(chat) ((chat)->_l == _messages_s.len)
 
 static int _oai_cc_chat_write_header(oai_cc_chat* chat) {
-  if ((chat->_p = chat->_a.realloc(NULL, _messages_s.len + 1)) == NULL) return -1;
+  void* _ptr = chat->_a.realloc(NULL, _messages_s.len + 1);
+  if (_ptr == NULL) return -1;
+  chat->_p = _ptr;
   chat->_l = _messages_s.len;
   memcpy(chat->_p, _messages_s.str, _messages_s.len + 1);
   return 0;
@@ -171,7 +173,10 @@ int oai_cc_chat_add_entry(oai_cc_chat* chat, char* content, size_t content_lengt
 
   chat->_p[offset++] = '\0';
 
-  chat->_p = chat->_a.realloc(chat->_p, offset);
+  void* _ptr = chat->_a.realloc(chat->_p, offset);
+  if (_ptr == NULL) return -1;
+  chat->_p = _ptr;
+
   chat->_l = offset - 1;
   chat->_b = 0;
 
@@ -251,8 +256,8 @@ int oai_cc_chat_load(oai_cc_chat* chat, char* filename) {
     fclose(f);
     return -1;
   }
-  chat->_l = total_size;
   chat->_p = ptr;
+  chat->_l = total_size;
 
   size_t offset = 0;
   OAI_CC_COPY_STR(chat->_p, offset, &_messages_s);
@@ -341,8 +346,8 @@ size_t _oai_cc_write_cb(const void* ptr, size_t size, size_t nmem, void* userdat
 
   void* _ptr = mem->chat->_a.realloc(mem->buffer, mem->length + real_payload_size + 1);  // + null
   if (_ptr == NULL) return 0;
-
   mem->buffer = _ptr;
+
   memcpy(mem->buffer + mem->length, ptr, real_payload_size);
   mem->length += real_payload_size;
   mem->buffer[mem->length] = '\0';
